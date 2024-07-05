@@ -46,48 +46,24 @@ const getHeaders = (apiKey, timestamp, signature) => ({
   "X-BM-SIGN": signature,
 });
 
-export const fetchBtcUsdtDetails = async () => {
+export const fetchTradingPairDetails = async (symbol) => {
   try {
     const response = await axios.get(
-      `${BASE_URL}/spot/v1/ticker_detail?symbol=ETH_USDT`
+      `${BASE_URL}/spot/v1/ticker_detail?symbol=${symbol}`
     );
+
     return response?.data;
   } catch (error) {
     console.error("Error fetching trading pairs list:", error);
-    throw error;
-  }
-};
-export const fetchShibUsdtDetails = async () => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/spot/v1/ticker_detail?symbol=SHIB_USDT`
-    );
-    return response?.data;
-  } catch (error) {
-    console.error("Error fetching trading pairs list:", error);
+
     throw error;
   }
 };
 
-export const getPrice = async () => {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}/spot/v1/ticker_detail?symbol=ETH_USDT`
-    );
-    const price = response.data.data.last_price; // Assurez-vous que ce chemin correspond à la structure de réponse de l'API
-
-    return parseFloat(price);
-  } catch (error) {
-    console.error("Error fetching price:", error);
-    return null;
-  }
-};
-
-export const fetchKLineData = async () => {
-  const symbol = "PENDLE_USDT";
+export const fetchKLineData = async (symbol) => {
   const from = Math.floor(Date.now() / 1000) - 3600; // Il y a une heure
   const to = Math.floor(Date.now() / 1000); // Maintenant
-  const interval = "5m"; // 5 e
+  const interval = "1m"; // 5 eh
 
   try {
     const response = await axios.get(
@@ -101,6 +77,10 @@ export const fetchKLineData = async () => {
         },
       }
     );
+    const volumes = response?.data.data.klines.map((kline) =>
+      parseFloat(kline.volume)
+    );
+
     const closingPrices = response?.data.data.klines.map((kline) =>
       parseFloat(kline.close)
     );
@@ -113,45 +93,9 @@ export const fetchKLineData = async () => {
       parseFloat(kline.low)
     );
 
-    return { highPrices, lowPrices, closingPrices };
+    return { highPrices, lowPrices, closingPrices, volumes };
   } catch (error) {
     console.error("Error fetching K-Line data:", error);
-  }
-};
-
-export const placeOrder = async ({
-  symbol,
-  side,
-  type,
-  size,
-  price,
-  tpPrice, // Take Profit Price
-  slPrice, // Stop Loss Price
-}) => {
-  const path = "/contract/private/submit-plan-order";
-  const timestamp = Date.now().toString();
-  const body = JSON.stringify({
-    symbol,
-    side,
-    size,
-    type,
-    price,
-    tp_price: tpPrice, // Assurez-vous que ce champ correspond à la documentation de l'API
-    sl_price: slPrice, // Assurez-vous que ce champ correspond à la documentation de l'API
-  });
-
-  const signature = generateSignature(timestamp, body);
-  const headers = getHeaders(API_KEY, timestamp, signature);
-
-  try {
-    const response = await axios.post(`${BASE_URL}${path}`, body, {
-      headers,
-    });
-    console.log("Order with TP/SL submitted successfully:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error submitting order with TP/SL:", error);
-    throw error;
   }
 };
 
@@ -165,6 +109,7 @@ export async function determineTrend(
     console.error("Pas assez de données pour calculer la tendance.");
     return "data-insufficient";
   }
+
   const shortTermSMA = calculateSMA(historicalPrices.slice(-shortTermPeriod));
   const longTermSMA = calculateSMA(historicalPrices.slice(-longTermPeriod));
   if (shortTermSMA > longTermSMA) return "up";
@@ -177,107 +122,69 @@ function calculateSMA(prices) {
   return sum / prices.length;
 }
 
-export const fetchCurrencies = async () => {
-  const headers = getHeaders(API_KEY, API_SECRET, API_MEMO);
+// export const submitOrder = async ({
+//   symbol,
+//   side,
+//   size,
+//   orderType = "market",
+//   price = null,
+//   tpPrice = null,
+//   slPrice = null,
+// }) => {
+//   const path = "/contract/private/submit-order";
+//   const timestamp = Date.now().toString();
+//   const bodyObj = {
+//     symbol,
+//     side,
+//     size,
+//     type: orderType,
+//   };
 
-  try {
-    const response = await axios.get(`${BASE_URL}/account/v1/wallet`, {
-      headers,
-    });
-    return response?.data;
-  } catch (error) {
-    console.error("Error fetching currencies:", error);
-    throw error; // ou gérer l'erreur comme vous le souhaitez
-  }
-};
+//   // Ajouter le prix si c'est un ordre limit
+//   if (orderType === "limit" && price) {
+//     bodyObj.price = price;
+//   }
 
-// Exemple d'utilisation
-(async () => {
-  try {
-    const currencies = await fetchCurrencies();
-    // console.log(currencies);
-  } catch (error) {
-    console.error(error);
-  }
-})();
+//   // Ajouter TP et SL si spécifiés
+//   if (tpPrice) {
+//     bodyObj.tp_price = tpPrice;
+//   }
+//   if (slPrice) {
+//     bodyObj.sl_price = slPrice;
+//   }
 
-export const fetchCurrentPosition = async () => {
-  const headers = getHeaders(API_KEY, API_SECRET, API_MEMO);
-  try {
-    const response = await axios.get(`${BASE_URL}/contract/private/position`, {
-      headers,
-    });
-    // console.log(response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching current position:", error);
-    throw error;
-  }
-};
+//   const body = JSON.stringify(bodyObj);
+//   const signature = generateSignature(timestamp, body);
 
-export const submitOrder = async ({
-  symbol,
-  side,
-  size,
-  orderType = "market",
-  price = null,
-  tpPrice = null,
-  slPrice = null,
-}) => {
-  const path = "/contract/private/submit-order";
-  const timestamp = Date.now().toString();
-  const bodyObj = {
-    symbol,
-    side,
-    size,
-    type: orderType,
-  };
+//   try {
+//     const response = await axios.post(`${BASE_URL}${path}`, body, {
+//       headers: getHeaders(API_KEY, timestamp, signature),
+//     });
+//     console.log("Order submitted successfully:", response.data);
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error submitting order:", error);
+//     throw error;
+//   }
+// };
 
-  // Ajouter le prix si c'est un ordre limit
-  if (orderType === "limit" && price) {
-    bodyObj.price = price;
-  }
+// export const cancelOrder = async (orderId) => {
+//   const path = "/contract/private/cancel-order";
+//   const timestamp = Date.now().toString();
+//   const body = JSON.stringify({
+//     order_id: orderId, // Assurez-vous de passer l'ID de la commande que vous souhaitez annuler
+//   });
 
-  // Ajouter TP et SL si spécifiés
-  if (tpPrice) {
-    bodyObj.tp_price = tpPrice;
-  }
-  if (slPrice) {
-    bodyObj.sl_price = slPrice;
-  }
+//   const signature = generateSignature(API_KEY, API_SECRET, timestamp, body);
 
-  const body = JSON.stringify(bodyObj);
-  const signature = generateSignature(timestamp, body);
-
-  try {
-    const response = await axios.post(`${BASE_URL}${path}`, body, {
-      headers: getHeaders(API_KEY, timestamp, signature),
-    });
-    console.log("Order submitted successfully:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error submitting order:", error);
-    throw error;
-  }
-};
-
-export const cancelOrder = async (orderId) => {
-  const path = "/contract/private/cancel-order";
-  const timestamp = Date.now().toString();
-  const body = JSON.stringify({
-    order_id: orderId, // Assurez-vous de passer l'ID de la commande que vous souhaitez annuler
-  });
-
-  const signature = generateSignature(API_KEY, API_SECRET, timestamp, body);
-
-  try {
-    const response = await axios.post(`${BASE_URL}${path}`, body, {
-      headers: getHeaders(API_KEY, timestamp, signature),
-    });
-    console.log("Order cancelled successfully:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error cancelling order:", error);
-    throw error;
-  }
-};
+//   try {
+//     const response = await axios.post(`${BASE_URL}${path}`, body, {
+//       headers: getHeaders(API_KEY, timestamp, signature),
+//     });
+//     console.log("Order cancelled successfully:", response.data);
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error cancelling order:", error);
+//     throw error;
+//   }
+// };

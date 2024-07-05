@@ -1,44 +1,21 @@
 import { useEffect, useState } from "react";
 
 import "./App.css";
-import {
-  fetchAccountBalance,
-  fetchBtcUsdtDetails,
-  fetchCurrentPosition,
-  fetchKLineData,
-  placeOrder,
-} from "../api/bitmart";
-import TradeBtcUsdt from "./components/TradeBtcUsdt";
+import { fetchKLineData, fetchTradingPairDetails } from "../api/bitmart";
+
 import CryptoToTrend from "./components/CryptoToTrend";
 
 function App() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [btcDetails, setbtcDetails] = useState([]);
   const [accountBalance, setAccountBalance] = useState(null);
-  const [kLineData, setKLineData] = useState(null);
-  const [position, setPosition] = useState(null);
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      const data = await fetchBtcUsdtDetails();
+      const data = await fetchTradingPairDetails("ETH_USDT");
       setbtcDetails(data?.data);
     }, 3000); // Récupère les données toutes les 5 secondes
 
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const loadAccountBalance = async () => {
-      const interval = setInterval(async () => {
-        const data = await fetchAccountBalance();
-        setKLineData(data?.data);
-      }, 3000); // Récupère les données toutes les 5 secondes
-
-      return () => clearInterval(interval);
-    };
-
-    loadAccountBalance();
   }, []);
 
   // useEffect(() => {
@@ -60,7 +37,7 @@ function App() {
 
   useEffect(() => {
     const loadAccountBalance = async () => {
-      const data = await fetchKLineData();
+      const data = await fetchKLineData("ETH_USDT");
       setAccountBalance(data);
     };
 
@@ -88,16 +65,6 @@ function App() {
             <div></div>
           </div>
         </div>
-        <h2>BTC_USDT Trading Pair Details</h2>
-        <h2>BTC_USDT Trading Pair Details</h2>
-        <p>Last Price: {btcDetails.last_price}</p>
-        <p>24h High: {btcDetails.high_24h}</p>
-        <p>24h Low: {btcDetails.low_24h}</p>
-        {/* <p>24h Volume (Base): {btcDetails.base_volume_24h}</p>
-        <p>24h Volume (Quote): {btcDetails.quote_volume_24h}</p> */}
-        <p>Fluctuation (24h): {btcDetails.fluctuation}</p>
-
-        {/* Ajoutez d'autres détails que vous souhaitez afficher */}
       </div>
     </>
   );

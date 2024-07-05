@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  fetchBtcUsdtDetails,
-  fetchCurrencies,
-  fetchCurrentPosition,
-} from "../../api/bitmart";
+import { fetchTradingPairDetails } from "../../api/bitmart";
 import { determineTrend } from "../constants/determineTrend";
 
 const CryptoToTrend = () => {
@@ -17,18 +13,18 @@ const CryptoToTrend = () => {
   const profitThreshold = 5; // Seuil de profit de 5%
   const lossThreshold = -3; // Seuil de perte de 3%
   const [profitLossPercentage, setProfitLossPercentage] = useState(0);
-  const capitalDisponible = 10;
-  const pourcentageDuCapital = 0.5; // 50%
-  const prixActuel = currentPrice; // Exemple de prix actuel de l'actif
-  const levier = 1;
 
-  const quantite =
-    (capitalDisponible * pourcentageDuCapital) / (prixActuel * levier);
+  const [shortPosition, setShortPosition] = useState("");
+  const [longPosition, setLongPosition] = useState("");
+  const [neutral, setNeutral] = useState("");
+  const [signal, setSignal] = useState("");
+  const [pair, setPair] = useState("");
+
   // Pourcentage de gain ou de perte
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      const data = await fetchBtcUsdtDetails();
+      const data = await fetchTradingPairDetails("XRP_USDT");
       if (data && data.data && data.data.last_price) {
         setCurrentPrice(data.data.last_price);
         setCurrentFluctuation(data.data.fluctuation); // Mise à jour de la fluctuation actuelle
@@ -39,23 +35,9 @@ const CryptoToTrend = () => {
   }, []);
 
   useEffect(() => {
-    const currencies = async () => {
-      const data = await fetchCurrencies();
-      if (data && data.data && data.data) {
-        const myCurrencies = data.data.data?.wallet.map((currencies) => {
-          setCurrencies(currencies);
-        });
-        return myCurrencies;
-        // Mise à jour de la fluctuation actuelle
-      }
-    };
-    currencies();
-  }, []);
-
-  useEffect(() => {
     const updateTradingPosition = async () => {
       // Déterminer la tendance actuelle pour le symbole souhaité
-      const trend = await determineTrend("PENDLE_USDT");
+      const trend = await determineTrend("ETH_USDT");
 
       // Logique basée sur la tendance identifiée
       if (trend === "up") {

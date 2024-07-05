@@ -1,43 +1,53 @@
-import { SMA, RSI } from "technicalindicators";
-import { MACD } from "technicalindicators";
-import { fetchBtcUsdtDetails, fetchKLineData } from "../../api/bitmart";
-import { ADX } from "technicalindicators";
+import { fetchKLineData, fetchTradingPairDetails } from "../../api/bitmart";
+import {
+  SMA,
+  RSI,
+  BollingerBands,
+  Stochastic,
+  MACD,
+  ADX,
+  EMA,
+  OBV,
+  ATR,
+} from "technicalindicators";
 
 // Fonction pour calculer SMA et RSI basée sur des prix donnés
-export async function calculateIndicators(prices) {
+export async function calculateIndicators(prices, highPrices, lowPrices) {
   const smaOutput = SMA.calculate({ period: 5, values: prices });
   const rsiOutput = RSI.calculate({ values: prices, period: 14 });
+  const ema50Output = EMA.calculate({ period: 50, values: prices });
+  const ema200Output = EMA.calculate({ period: 200, values: prices }); // Corrected period to 200
+
+  // Configuration pour les Bollinger Bands
+  const bbInput = {
+    period: 20,
+    values: prices,
+    stdDev: 2,
+  };
+  const bbOutput = BollingerBands.calculate(bbInput);
+
+  // Configuration pour l'Oscillateur Stochastique
+  const stochasticInput = {
+    high: highPrices,
+    low: lowPrices,
+    close: prices,
+    period: 14,
+    signalPeriod: 3,
+  };
+  const stochasticOutput = Stochastic.calculate(stochasticInput);
 
   return {
     sma: smaOutput,
     rsi: rsiOutput,
+    bollingerBands: bbOutput,
+    stochastic: stochasticOutput,
+    ema50: ema50Output, // Return EMA 50
+    ema200: ema200Output, // Return EMA 200
   };
 }
 
-let historicalHighPrices = [];
-let historicalLowPrices = [];
-let historicalClosePrices = [];
-console.log(" Les prix historiques" + historicalClosePrices);
-
-async function getDetails() {
-  try {
-    const data = await fetchBtcUsdtDetails();
-
-    // console.log(closingPricesETC);
-    historicalHighPrices.push(parseFloat(data.data.high_24h));
-    historicalLowPrices.push(parseFloat(data.data.low_24h));
-
-    return data.data; // Retourner les données pour utilisation ultérieure
-  } catch (error) {
-    console.error("Failed to fetch details:", error);
-    return null; // Retourner null ou un objet vide en cas d'échec
-  }
-}
-
-export async function calculateMACDIndicators() {
-  await getDetails(); // Assurez-vous que cette fonction met à jour les tableaux historiques
-
-  const ETHhistorical = await fetchKLineData();
+export async function calculateMACDIndicators(symbol) {
+  const ETHhistorical = await fetchKLineData(symbol); // Added symbol to parameter
 
   const macdInput = {
     values: ETHhistorical.closingPrices, // Utilisez le tableau de prix de clôture accumulés
@@ -51,14 +61,24 @@ export async function calculateMACDIndicators() {
 
   // Calcul de l'ADX avec les prix hauts, bas et de clôture accumulés
   const adxInput = {
-    high: ETHhistorical.highPrices, // Utilisez le tableau de prix hauts accumulés
-    low: ETHhistorical.lowPrices, // Utilisez le tableau de prix bas accumulés
-    close: ETHhistorical.closingPrices, // Utilisez le même tableau pour les prix de clôture
+    high: ETHhistorical.highPrices,
+    low: ETHhistorical.lowPrices,
+    close: ETHhistorical.closingPrices,
     period: 14,
   };
+  const obvResult = OBV.calculate({
+    close: ETHhistorical.closingPrices,
+    volume: ETHhistorical.volumes,
+  });
+
+  const atrOutput = ATR.calculate({
+    high: ETHhistorical.highPrices,
+    low: ETHhistorical.lowPrices,
+    close: ETHhistorical.closingPrices,
+    period: 14,
+  });
 
   const adxResult = ADX.calculate(adxInput);
-  return { macdResult, adxResult };
-}
 
-calculateMACDIndicators();
+  return { macdResult, adxResult, obvResult, atrOutput };
+}
