@@ -63,7 +63,7 @@ export const fetchTradingPairDetails = async (symbol) => {
 export const fetchKLineData = async (symbol) => {
   const from = Math.floor(Date.now() / 1000) - 3600; // Il y a une heure
   const to = Math.floor(Date.now() / 1000); // Maintenant
-  const interval = "1m"; // 5 eh
+  const interval = "15m"; // 5 eh
 
   try {
     const response = await axios.get(

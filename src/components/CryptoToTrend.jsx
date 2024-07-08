@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { fetchTradingPairDetails } from "../../api/bitmart";
+import { fetchKLineData, fetchTradingPairDetails } from "../../api/bitmart";
 import { determineTrend } from "../constants/determineTrend";
 
-const CryptoToTrend = () => {
+const CryptoToTrend = (props) => {
   const [currentPrice, setCurrentPrice] = useState(0);
   const [currentFluctuation, setCurrentFluctuation] = useState(0);
   const [buyPrice, setBuyPrice] = useState(null);
@@ -20,11 +20,10 @@ const CryptoToTrend = () => {
   const [signal, setSignal] = useState("");
   const [pair, setPair] = useState("");
 
-  // Pourcentage de gain ou de perte
-
+  const tradingPair = props.pair;
   useEffect(() => {
     const interval = setInterval(async () => {
-      const data = await fetchTradingPairDetails("XRP_USDT");
+      const data = await fetchTradingPairDetails(tradingPair);
       if (data && data.data && data.data.last_price) {
         setCurrentPrice(data.data.last_price);
         setCurrentFluctuation(data.data.fluctuation); // Mise à jour de la fluctuation actuelle
@@ -36,24 +35,26 @@ const CryptoToTrend = () => {
 
   useEffect(() => {
     const updateTradingPosition = async () => {
-      // Déterminer la tendance actuelle pour le symbole souhaité
-      const trend = await determineTrend("ETH_USDT");
+      const trend = await determineTrend(tradingPair);
 
       // Logique basée sur la tendance identifiée
       if (trend === "up") {
-        console.log("Tendance à la hausse, placer un ordre d'achat");
         // Implémentez votre logique d'achat ici
       } else if (trend === "down") {
-        console.log("Tendance à la baisse, envisager de vendre");
         // Implémentez votre logique de vente ici
       } else {
-        console.log("Tendance neutre, aucune action entreprise");
         // Gérez le cas neutre ici
       }
     };
 
     updateTradingPosition();
-  }, [currentPrice, investmentAmount, profitThreshold, lossThreshold]);
+  }, [
+    currentPrice,
+    investmentAmount,
+    profitThreshold,
+    lossThreshold,
+    tradingPair,
+  ]);
 
   return (
     <div>

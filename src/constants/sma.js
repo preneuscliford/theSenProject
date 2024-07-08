@@ -15,8 +15,21 @@ import {
 export async function calculateIndicators(prices, highPrices, lowPrices) {
   const smaOutput = SMA.calculate({ period: 5, values: prices });
   const rsiOutput = RSI.calculate({ values: prices, period: 14 });
-  const ema50Output = EMA.calculate({ period: 50, values: prices });
-  const ema200Output = EMA.calculate({ period: 200, values: prices }); // Corrected period to 200
+  // Assurez-vous d'avoir suffisamment de valeurs pour calculer les EMA 50 et 200
+  let ema50Output = [];
+  let ema200Output = [];
+
+  if (prices.length >= 50) {
+    ema50Output = EMA.calculate({ period: 50, values: prices });
+  } else {
+    console.error("Pas assez de données pour calculer EMA 50.");
+  }
+
+  if (prices.length >= 200) {
+    ema200Output = EMA.calculate({ period: 200, values: prices });
+  } else {
+    console.error("Pas assez de données pour calculer EMA 200.");
+  }
 
   // Configuration pour les Bollinger Bands
   const bbInput = {

@@ -46,7 +46,7 @@ export async function determineTrend(symbol) {
   const latestAtr = atrOutput[atrOutput.length - 1];
   // Bollinger Bands and Stochastic values
 
-  console.log(`OBV: ${latestObv}, ATR: ${latestAtr}`);
+  console.log(symbol + `: OBV: ${latestObv}, ATR: ${latestAtr} `);
 
   const stochasticK = stochastic[stochastic.length - 1].k;
   const stochasticD = stochastic[stochastic.length - 1].d;
@@ -100,16 +100,24 @@ export async function determineTrend(symbol) {
   // Decision making based on RSI, MACD, ADX combined with Bollinger Bands and Stochastic
 
   if (longEntryCondition) {
-    console.log("Conditions remplies pour entrer en position longue.");
+    console.log(
+      "Conditions remplies pour entrer en position longue  sur le " + symbol
+    );
     return "long";
   } else if (longExitCondition) {
-    console.log("Conditions remplies pour sortir de position longue.");
+    console.log(
+      "Conditions remplies pour sortir de position longue  sur le " + symbol
+    );
     return "exit-long";
   } else if (shortEntryCondition) {
-    console.log("Conditions remplies pour entrer en position courte.");
+    console.log(
+      "Conditions remplies pour entrer en position courte sur le " + symbol
+    );
     return "short";
   } else if (shortExitCondition) {
-    console.log("Conditions remplies pour sortir de position courte.");
+    console.log(
+      "Conditions remplies pour sortir de position courte sur le " + symbol
+    );
     return "exit-short";
   } else if (
     latestPrice > sma[sma.length - 1] &&
@@ -117,7 +125,8 @@ export async function determineTrend(symbol) {
     latestObv > 0
   ) {
     console.log(
-      "Forts signaux haussiers provenant du prix, du MACD et de l’OBV..."
+      "Forts signaux haussiers provenant du prix, du MACD et de l’OBV... sur le " +
+        symbol
     );
     return "up";
   } else if (
@@ -125,7 +134,9 @@ export async function determineTrend(symbol) {
     latestMacdHistogram < 0 &&
     latestObv < 0
   ) {
-    console.log("Forts signaux baissiers du prix, du MACD et de l’OBV...");
+    console.log(
+      "Forts signaux baissiers du prix, du MACD et de l’OBV... sur le " + symbol
+    );
     return "down";
   } else if (
     latestRsi > 70 ||
